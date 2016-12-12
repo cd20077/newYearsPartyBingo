@@ -137,8 +137,6 @@
           }, 300, function() {
               var modal_height = $(modalID).find('.content').position().top + $(modalID).find('.content').outerHeight(true);
               var body_height = $('body').outerHeight(true);
-              console.log(modal_height);
-              console.log(body_height);
 
               if (body_height < modal_height) {
                   $('body').data('prev_height', body_height);

@@ -1,58 +1,173 @@
-$ = function(x) {
-  return document.getElementById(x);
+/*-----
+ビンゴの最大数字（ビンゴ用紙によって変更）
+-----*/
+var maxNum = 16;
+
+/*-----
+初期化
+-----*/
+$(function(){
+    init();
+    fontReSize();
+    resultReSize();
+    $('#btn').on('click',clickSelect);
+    $('#bingoList p').toggle(resultShow,resultHide);
+
+    /*-----
+    データリセット
+    -----*/
+    $('#reset').on('click', function() {
+        dataReset();
+        init();
+        fontReSize();
+        resultReSize();
+        $('#btn').unbind('on').bind('on',clickSelect).removeClass().addClass('on').text('START');
+        $('#bingo p').text('00');
+    });
+});
+$(window).resize(function(){
+    fontReSize();
+    resultReSize();
+});
+
+/*-----
+ビンゴ数字の初期化
+-----*/
+var bingoNum,pickNum;
+function init() {
+    if (window.localStorage.getItem("bingoNum")){
+        bingoNum = JSON.parse(window.localStorage.getItem("bingoNum")) || new Array();
+        pickNum = JSON.parse(window.localStorage.getItem("pickNum")) || new Array();
+        var nowTr = $('#summary').empty().append('<tr />').find('tr:last-child');
+        for(var i=0;i<maxNum;i++){
+            var num = parseInt(i+1);
+            if(num%15==0){
+                nowTr.append('<td>' + num + '</td>');
+                nowTr = $('#summary').append('<tr />').find('tr:last-child');
+            } else {
+                nowTr.append('<td>' + num + '</td>');
+            }
+        }
+        for(var i=0,l=pickNum.length;i<l;i++){
+            var num = pickNum[i];
+            var tdNum = parseInt(num-1);
+            $('#summary td').eq(tdNum).addClass('check');
+        }
+    } else {
+        bingoNum = new Array();
+        var nowTr = $('#summary').empty().append('<tr />').find('tr:last-child');
+        for(var i=0;i<maxNum;i++){
+            var num = parseInt(i+1);
+            bingoNum[i] = num;
+            if(num%15==0){
+                nowTr.append('<td>' + num + '</td>');
+                nowTr = $('#summary').append('<tr />').find('tr:last-child');
+            } else {
+                nowTr.append('<td>' + num + '</td>');
+            }
+        }
+        pickNum = new Array();
+    }
+
 }
 
-// ビンゴ用数字配列
-var numList = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75];
-
-var movie = [''];
-
-var isStop = true;
-
-function startBingo() {
-  // ボタンの表示切り替え
-  $("start").style.display = "none";
-  $("stop").style.display = "inline";
-  isStop = false;
-  roulette();
+/*-----
+選ぶまで数字をランダムに表示
+-----*/
+var numTimer;
+function randNum() {
+    var cnt = 1 + Math.floor( Math.random() * maxNum );
+    //$('#bingo p').text(cnt);
+    $('#bingo p').html('<img src="images/no_flame/'+cnt+'.png" />');
 }
-
-function stopBingo() {
-  // ボタンの表示切り替え
-  $("start").style.display = "inline";
-  $("stop").style.display = "none";
-  isStop = true;
+function randTimer() {
+    numTimer = setInterval("randNum()",100);
 }
-
-function roulette() {
-  var id = "";
-  var rnd = Math.floor(Math.random() * numList.length);
-
-  // ストップボタンが押された
-  if (isStop) {
-    // 遅延呼び出しを解除
-    clearTimeout(id);
-
-    $("view").innerText = numList[rnd];
-    if (!$("out").innerText) {
-      $("out").innerText = $("out").innerText + numList[rnd];
+/*-----
+数字を配列から選ぶ
+-----*/
+function numSelect() {
+    var len = bingoNum.length - 1;
+    var indx = Math.floor( Math.random() * len );
+    var selected = bingoNum[indx];
+    pickNum.push(selected);
+    bingoNum.splice(indx,1);
+    dataSave();
+    if(len==0){
+        $('#btn').unbind('click',clickSelect).removeClass().addClass('off').text('END');
     }
-    else {
-      $("out").innerText = $("out").innerText + "　" + numList[rnd];
+    return selected;
+}
+/*-----
+数字一覧を表示
+-----*/
+function resultShow() {
+    $('#bingoList').stop().animate({top: '30px'});
+    $('#bingoList p').text('Close');
+}
+function resultHide() {
+    $('#bingoList').stop().animate({top: '100%'});
+    $('#bingoList p').text('View Result');
+}
+function resultReSize() {
+    var ww = getBrowserWidth();
+    var hh = getBrowserHeight();
+    $('#summary').css({width:(ww-20) + 'px',height:(hh-50) + 'px'});
+    var tdW = $('#summary td').width();
+    tdW = Math.floor(tdW*0.8);
+    $('#summary td').css('font-size',tdW + 'px');
+}
+/*-----
+ボタンクリックで数字選択
+-----*/
+function clickSelect() {
+    if ($('#btn').is(":contains('STOP')")) {
+        $('#btn').text('START');
+        clearInterval(numTimer);
+        var numText = numSelect();
+        //$('#bingo p').text(numText);
+        $('#bingo p').html('<img src="images/no_flame/'+numText+'.png" />');
+        var tdNum = parseInt(numText-1);
+        $('#summary td').eq(tdNum).addClass('check');
+    } else {
+        $('#btn').text('STOP');
+		randTimer();
     }
-
-    //決定した数字をリストから削除する
-    numList.splice(rnd, 1);
-    // リストが空になったら終了
-    if (numList.length == 0) {
-      alert("最後です。");
-      $("start").disabled = true;
-    }
-    return false;
-  }
-
-  // 乱数を画面に表示
-  $("view").innerText = numList[rnd];
-  // 100ms後に再帰的に実行するよう登録する
-  id = setTimeout("roulette()", 100);
+}
+/*-----
+localstorageへデータ保存/リセット
+-----*/
+function dataSave() {
+    if(!window.localStorage) return;
+    window.localStorage.setItem("bingoNum", JSON.stringify(bingoNum));
+    window.localStorage.setItem("pickNum", JSON.stringify(pickNum));
+}
+function dataReset() {
+    if (!window.localStorage) return;
+    window.localStorage.clear();
+}
+/*-----
+ブラウザサイズを取得して文字サイズ変更
+-----*/
+function fontReSize(){
+    var ww = getBrowserWidth();
+    var hh = getBrowserHeight();
+    var fontSize = Math.floor(hh*0.75);
+    $('#bingo p').css('font-size',fontSize+'px');
+    var fontLeft = Math.floor($('#bingo p').width()/2);
+    //var fontTop = Math.floor(($('#bingo p').height()*0.88)/2);
+    var fontTop = Math.floor(($('#bingo p').height())/2);
+    $('#bingo p').css({width:fontLeft*2,height:fontTop*2,marginLeft:-fontLeft,marginTop:-fontTop});
+}
+function getBrowserWidth() {
+    if ( window.innerWidth ) return window.innerWidth;
+    else if ( document.documentElement && document.documentElement.clientWidth != 0 ) return document.documentElement.clientWidth;
+    else if ( document.body ) return document.body.clientWidth;
+    return 0;
+}
+function getBrowserHeight() {
+    if ( window.innerHeight ) return window.innerHeight;
+    else if ( document.documentElement && document.documentElement.clientHeight != 0 ) return document.documentElement.clientHeight;
+    else if ( document.body ) return document.body.clientHeight;
+    return 0;
 }
