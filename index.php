@@ -45,7 +45,7 @@
         </footer>
 
         <audio id="drum" preload="auto">
-            <source src="asset/nc79078.mp3" type="audio/mp3">
+            <source src="./music/nc79078.mp3" type="audio/mp3">
         </audio>
 
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
