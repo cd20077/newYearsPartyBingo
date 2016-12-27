@@ -90,7 +90,8 @@
         isStarted = false;
         startButton.text('Start');
         var n = removeNumberRamdom();
-        $.facebox({ image: 'images/no_flame/'+n+'.png' });
+        //$.facebox({ image: 'images/no_flame/'+n+'.png' });
+        $.facebox({ div: '#box' });
         pingoNumber.text(toBingoString(n));
         addHistory(n);
         drumAudio.pause();
